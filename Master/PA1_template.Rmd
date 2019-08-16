@@ -1,0 +1,107 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+
+
+## Loading and preprocessing the data
+```{r  echo=TRUE}
+activity <- read.csv("C:/Users/Abhishek/Desktop/activity.csv")
+
+```
+Exploring the dataset
+```{r echo=TRUE}
+head(activity)
+summary(activity)
+
+```
+
+
+## What is mean total number of steps taken per day?
+```{r}
+agg<-aggregate(steps~date,data=activity,na.rm=TRUE,FUN=sum)
+print(agg)
+
+```
+Histogram of steps
+```{r}
+hist(agg$steps,xlab="Steps taken in a day",main="Histogram of steps")
+```
+<br/>
+
+Finding mean and median
+```{r}
+Mean<-mean(agg$steps)
+Mean
+Median<-median(agg$steps)
+Median
+
+```
+
+## What is the average daily activity pattern?
+Time series plot
+```{r}
+agg2<-aggregate(steps~interval,data=activity,na.rm=TRUE,FUN=mean)
+plot(agg2$interval,agg2$steps,type="l",xlab="Intreval",ylab="Steps",main="Time series Plot")
+```
+<br/>
+
+Finding interval corresponding to maximum steps
+```{r}
+Maxi<-subset(agg2,agg2$steps==(max(agg2$steps)))
+Maxi$interval
+```
+Total number of misssing values
+```{r}
+a<-subset(activity,is.na(steps))
+ NROW(a)
+```
+## Imputing missing values
+ Method to fill missing values : Replace the NA values of a particular step with the average number of steps of the corresponding interval it belongs to. Replacing missing values:
+```{r}
+ac2<-aggregate(steps~interval,data=activity,FUN=mean)
+for (i in 1:nrow(activity))
+{
+  if(is.na(activity$steps[i]))
+  {
+    activity$steps[i]<-ac2$steps[which(ac2$interval %in% activity$interval[i])]
+  }
+}
+```
+Creating new dataset : Missing values already replaced in original dataset
+```{r}
+Activit<-activity
+```
+
+
+
+## Are there differences in activity patterns between weekdays and weekends?
+Making histogram
+```{r}
+agg2<-aggregate(steps~date,data=Activit,na.rm=TRUE,FUN=sum)
+hist(agg2$steps,xlab="Steps taken in a day",main="Histogram of steps")
+```
+Calculating mean and median
+```{r}
+Mean<-mean(agg2$steps)
+Mean
+Median<-median(agg2$steps)
+Median
+
+```
+ As we can see, there is a difference between the two histograms belonging to the two datasets. The frequency has increased when the missing values have been replaced. This was expected.
+There is a slight change in the mean and median as well 
+
+Making panel plot containing plots of average number of steps taken
+on weekdays and weekends.
+```{r}
+library(ggplot2)
+activity$date<-as.POSIXlt(activity$date)
+activity$day <-  ifelse(weekdays(activity$date) %in% c("Saturday","Sunday"), 'weekend', 'weekday')
+table(activity$day)
+agg3<-aggregate(steps~interval+day,data=activity,na.rm=TRUE,FUN=mean)
+ggplot(agg3,aes(x=interval,y=steps),color=day)+geom_line()+facet_wrap(~day)
+
+```
